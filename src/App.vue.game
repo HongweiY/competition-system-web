@@ -1,0 +1,69 @@
+<template>
+  <game-frame/>
+</template>
+
+<script>
+import GameFrame from './components/GameFrame.vue'
+
+
+export default {
+  name: 'App',
+  components: {GameFrame},
+  mounted() {
+    this.$storage.setItem('age', 29)
+  },
+}
+</script>
+<style lang="scss">
+</style>
+
+.answer-header {
+    width: 100%;
+    height: 11.57vh;
+    background-image: url("../assets/images/main-header.png");
+    background-size: 100% 100%;
+    text-align: center;
+    padding-top: 21px;
+
+    p {
+      margin: auto;
+      width: 684px;
+      height: 34px;
+      font-size: 46px;
+      font-family: YouSheBiaoTiHei;
+      font-weight: 400;
+      color: #FFFFFF;
+      line-height: 40px;
+      opacity: 0.8;
+      text-shadow: 0px 8px 7px #0B5C65;
+    }
+
+  }
+
+  .answer-content {
+    height: 88.43vh;
+    display: flex;
+    padding-top: 23px;
+    .answer-left {
+      height: 100%;
+
+      .answer-left-countdown {
+        height: 80px;
+        margin-left: 50px;
+        margin-bottom: 60px;
+      }
+
+      .answer-left-rank {
+        width: 266px;
+        height: calc(100% - 80px);
+        margin-left: 70px;
+
+      }
+    }
+
+    .answer-main {
+      width: 1309px;
+      margin-left: 81px;
+
+    }
+  }
