@@ -34,7 +34,7 @@ export default {
       //判断跳转信息是否齐全
       const cid = route.query.cid
       const token = route.query.token
-
+      const type = route.query.type
       if(cid && token) {
         //齐全，第一次进入竞赛
         const params = {
@@ -48,9 +48,20 @@ export default {
 
           // 刷新页面
           if(isMobile()) {
-            await router.push({
-              path: 'answer_h5'
-            })
+            if(type === 'must') {
+              await router.push({
+                path: 'answer_must_h5'
+              })
+            } else if(type === 'disuse') {
+              await router.push({
+                path: 'answer_disuse_h5'
+              })
+            } else {
+              await router.push({
+                path: 'answer_h5'
+              })
+            }
+
           } else {
             await router.push({
               path: 'answer_pc'
@@ -60,41 +71,51 @@ export default {
         })
       } else {
         //查询混存中是否存在信息
-        const competeInfo = storage.getItem('competeInfo')
-        const userInfo = storage.getItem('userInfo')
-        if(dayjs(competeInfo.startTime).isAfter(dayjs())) {
-          if(isMobile()) {
-            await router.push({
-              path: 'h5_404'
-            })
-          } else {
-            await router.push({
-              path: 'pc_404'
-            })
-          }
-        }
-        if(dayjs(competeInfo.endTime).isBefore(dayjs())) {
-          if(isMobile()) {
-            await router.push({
-              path: 'h5_404'
-            })
-          } else {
-            await router.push({
-              path: 'pc_404'
-            })
-          }
-        }
-
-        // 刷新页面
-        if(isMobile()) {
-          await router.push({
-            path: 'answer_h5'
-          })
-        } else {
-          await router.push({
-            path: 'answer_pc'
-          })
-        }
+        // const competeInfo = storage.getItem('competeInfo')
+        // const userInfo = storage.getItem('userInfo')
+        // if(dayjs(competeInfo.startTime).isAfter(dayjs())) {
+        //   if(isMobile()) {
+        //     await router.push({
+        //       path: 'h5_404'
+        //     })
+        //   } else {
+        //     await router.push({
+        //       path: 'pc_404'
+        //     })
+        //   }
+        // }
+        // if(dayjs(competeInfo.endTime).isBefore(dayjs())) {
+        //   if(isMobile()) {
+        //     await router.push({
+        //       path: 'h5_404'
+        //     })
+        //   } else {
+        //     await router.push({
+        //       path: 'pc_404'
+        //     })
+        //   }
+        // }
+        //
+        // // 刷新页面
+        // if(isMobile()) {
+        //   if(competeInfo.cId === 1) {
+        //     await router.push({
+        //       path: 'answer_must_h5'
+        //     })
+        //   } else if(competeInfo.cId === 2) {
+        //     await router.push({
+        //       path: 'answer_disuse_h5'
+        //     })
+        //   } else {
+        //     await router.push({
+        //       path: 'answer_h5'
+        //     })
+        //   }
+        // } else {
+        //   await router.push({
+        //     path: 'answer_pc'
+        //   })
+        // }
       }
 
 

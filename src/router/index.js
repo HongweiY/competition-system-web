@@ -11,6 +11,14 @@ const routes = [
         component: () => import('../App.vue'),
     },
     {
+        name: '/rank_h5',
+        path: '/rank_h5',
+        meta: {
+            title: '排行榜',
+        },
+        component: () => import('../views/h5/Rank.vue'),
+    },
+    {
         name: 'answer_pc',
         path: '/answer_pc',
         meta: {
@@ -25,6 +33,22 @@ const routes = [
             title: '答题页面',
         },
         component: () => import('../views/h5/Answer.vue'),
+    },
+    {
+        name: 'answer_must_h5',
+        path: '/answer_must_h5',
+        meta: {
+            title: '必答赛',
+        },
+        component: () => import('../views/h5/Answer_must.vue'),
+    },
+    {
+        name: 'answer_disuse_h5',
+        path: '/answer_disuse_h5',
+        meta: {
+            title: '淘汰赛',
+        },
+        component: () => import('../views/h5/Answer_disuse.vue'),
     },
     {
         name: 'h5_404',
@@ -53,9 +77,9 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
     if(router.hasRoute(to.name)) {
         document.title = to.meta.title
-        if( !store.state.ws){
+        if(!store.state.ws) {
 
-            store.commit('initWebSocket',{})
+            store.commit('initWebSocket', {})
         }
 
         next()

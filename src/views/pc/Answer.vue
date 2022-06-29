@@ -427,8 +427,6 @@ export default {
         background-size: 100% 100%;
       }
     }
-
-
   }
 
 }

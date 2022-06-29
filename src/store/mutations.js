@@ -88,6 +88,7 @@ export default {
             useTime: 0,
             score: 0
         }]
+
         for(const user of matchUserInfo) {
             if(user._id !== currentUser._id) {
                 state.matchUserInfo.push({
@@ -95,12 +96,15 @@ export default {
                     role: '对手',
                     name: user.username,
                     useTime: 0,
-                    score: 0
+                    score: user.__v
                 })
             }
+            if(user._id === currentUser._id) {
+                state.matchUserInfo[0].score = user.__v
+            }
+
 
         }
-        console.log(state.matchUserInfo)
     },
     finalUserInfos(state, value) {
         const matchInfo = value.message
@@ -166,6 +170,7 @@ export default {
     //推送回答情况
     pushAnswerInfo(state, value) {
         const answerInfos = value.message
+
         const tempMatchUserInfo = state.matchUserInfo
         const newMatchUserInfo = []
         for(const user of tempMatchUserInfo) {
@@ -181,6 +186,7 @@ export default {
             }
         }
         state.matchUserInfo = newMatchUserInfo
+        //
     },
     //终极排位赛信息
     finalCompetition(state, value) {

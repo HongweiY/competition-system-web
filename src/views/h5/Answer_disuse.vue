@@ -4,10 +4,8 @@
 
     </div>
     <div class="answer-header">
-      <img src="../../assets/images/h5/must.png" v-if="currentType==='must'">
-      <img src="../../assets/images/h5/disuse.png" v-if="currentType==='disuse'">
-      <img src="../../assets/images/h5/final.png" v-if="currentType==='final'">
-      <p>规则</p>
+      <img src="../../assets/images/h5/disuse.png">
+      <router-link :to="'/rank_h5'"><p >排行榜</p></router-link>
     </div>
     <div class="answer-userinfo">
       <component :is="competeTypeInfo[currentType]['component']"></component>
@@ -121,50 +119,18 @@ export default {
     let timer = ''
 
     const allCountDown = () => {
-      let lastTime
-      let currentType
-      //查询当前模式
-      switch(competeInfo.value['currentType']) {
-        case 'must':
-          lastTime = dayjs(competeInfo.value.startTime).unix() + 20 * 60 - dayjs().unix()
-          currentType='disuse'
-          break;
-        case 'disuse':
-          lastTime = dayjs(competeInfo.value.startTime).unix() + 20 * 60 + 20 * 60 - dayjs().unix()
-          currentType='final'
-          break;
-        case 'final':
-          lastTime = dayjs(competeInfo.value.endTime).unix()  - dayjs().unix()
-          currentType='final'
-          break;
-
-      }
+      const lastTime = 20*60
 
       if(lastTime <= 0) {
         countDownTime.value = '00:00'
         clearTimeout(timer)
-        //通知服务器竞赛切换
-        store.state.ws.send(JSON.stringify({
-          event: 'changeCompeteType',
-          message: {
-            cId:competeInfo.value.cId,
-            userId:store.state.userInfo.userId,
-            currentType
-          }
-        }))
-
+        //竞赛结束
+        matching.value = true
+        dialogVisible.value = true
+        readyStatus.value.status = false
+        readyStatus.value.msg = '当前竞赛已经结束'
         return false
       }
-
-      let day = Math.floor(lastTime / 60 / 60 / 24)
-      let hr = Math.floor(lastTime / 60 / 60 % 24)
-      let min = Math.floor(lastTime / 60 % 60)
-      let sec = lastTime % 60
-      hr = hr > 9 ? hr : '0' + hr
-      min = min > 9 ? min : '0' + min
-      sec = sec > 9 ? sec : '0' + sec
-
-      countDownTime.value = day + ':' + hr + ':' + min + ':' + sec
       timer = setTimeout(function() {
         allCountDown()
       }, 1000)
@@ -201,6 +167,7 @@ export default {
     })
     let perTime = competeTypeInfo[currentType.value]['perTime'];
 
+
     watch(() => store.state.penInfo, (val, old) => {
       penInfo.value = val
       matching.value = false
@@ -227,38 +194,6 @@ export default {
       readyStatus.value.status = false
       readyStatus.value.msg = store.state.pushInfo
     })
-    //开启新的模式
-    watch(() => store.state.competeInfo, (val, old) => {
-      //判断是终极排位赛还是其他
-      currentType.value = val['currentType']
-      if(val['currentType'] !== old['currentType']) {
-        competeInfo.value = val
-        dialogVisible.value = true
-        matching.value = true
-        if(val['currentType'] === 'final') {
-          //开启终极排位赛
-          startFinal()
-          if(store.state.finalInfo) {
-            ElMessage({
-              message: store.state.finalInfo.showMessage,
-              type: 'success',
-              duration: 5000
-            })
-          } else {
-            readyStatus.value.status = false
-            readyStatus.value.msg = '比赛已结束，你未能进入终极排位赛'
-            dialogVisible.value = true
-            matching.value = true
-          }
-        } else {
-          dialogVisible.value = true
-          matching.value = true
-
-          startMatch()
-        }
-      }
-
-    })
 
     const countdown = () => {
       let newTime = perTime
@@ -284,17 +219,9 @@ export default {
         }
         readyStatus.value.status = false
         readyStatus.value.msg = '匹配当中'
-
-
       })
     }
-    //开启终极排位赛
-    const startFinal = async() => {
-      let params = {cid: competeInfo.value.cId, type: currentType.value, uid: userInfo.userId}
-      $api.startFinal(params).then((res) => {
 
-      })
-    }
     const competitionInfo = async() => {
       const cid = competeInfo.value.cId
       if(cid) {
@@ -308,11 +235,7 @@ export default {
           }
         })
       }
-
-
     }
-
-
     onBeforeMount(() => {
       clearTimeout(timer)
     })
@@ -559,13 +482,13 @@ export default {
         p {
           color: #FFE640;
           font-size: 47px;
-          width: 188px;
+          width: 258px;
           height: 37px;
           position: absolute;
           left: 50%;
           top: 50%;
           margin-top: -18px;
-          margin-left: -90px;
+          margin-left: -129px;
           font-weight: bold;
           text-align: center;
 
