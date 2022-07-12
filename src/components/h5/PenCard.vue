@@ -4,14 +4,15 @@
       <p>第 {{ userRounds }} 轮</p>
     </div>
     <div class="pen-order">
-      <p>{{ penInfo.penRoundsNumber }}</p>|<p>{{ penInfo.penType }}</p>
+      <p>{{ penInfo.penRoundsNumber }}</p> | <p>{{ penInfo.penType }}</p>
     </div>
     <template v-if="penInfo.src">
-      <iframe :src="penInfo.src" class="interactive-container" ></iframe>
+      <iframe :src="penInfo.src" class="interactive-container"></iframe>
     </template>
     <template v-else>
       <div class="pen-info">
-        <p class="pen-stem">{{ penInfo.stem }}</p>
+        <p class="pen-stem" oncopy="return false" oncut="return false;" onselectstart="return false"
+           oncontextmenu="return false">{{ penInfo.stem }}</p>
         <el-checkbox-group v-model="answer" class="pen-options" v-if="penInfo.penType==='多选'">
           <el-checkbox :label="labelOption[index]" v-for="(item,index) in penInfo.options" :key="index" size="large"
                        class="pen-options-radio"><p>{{ item }}</p>
@@ -24,7 +25,7 @@
         </el-radio-group>
       </div>
       <div class="pen-submit" @click="submitAnswer()">
-        <P>提交答案</P>
+        <p>提交答案</p>
       </div>
     </template>
   </div>
@@ -33,15 +34,16 @@
 
 <script setup>
 import store from "../../store";
-import {ElMessage} from 'element-plus'
+import {ElNotification} from 'element-plus'
 
-import {ref, watch, defineExpose, defineProps,onMounted} from "vue";
+import {ref, watch, defineExpose, defineProps, onMounted} from "vue";
 import api from "../../api";
 
 const penInfo = ref({})
 const penId = ref({})
 const rounds = ref({})
 const penType = ref('')
+const canSubmit = ref(false)
 
 const labelOption = ref(['A', 'B', 'C', 'D', 'E', 'F', 'G'])
 
@@ -56,9 +58,9 @@ watch(() => store.state.penInfo, (val, old) => {
   penId.value = val.penId
   penType.value = val.penType
   rounds.value = val.penRoundsNumber
-  if(val.rounds != 1) {
-    userRounds.value = val.rounds
-  }
+  canSubmit.value = true
+  userRounds.value = val.rounds
+  answer.value = []
 })
 
 
@@ -68,7 +70,7 @@ const timeOutAnswer = () => {
   //对答案处理
   let postAnswer = ''
   if(penType.value === '多选') {
-    if(answer) {
+    if(answer.value) {
       answer.value.sort()
       for(const answerKey of answer.value) {
         postAnswer = postAnswer ? postAnswer + ',' + answerKey : answerKey
@@ -90,13 +92,13 @@ const timeOutAnswer = () => {
   ).then(res => {
     console.log(res)
   })
-  answer.value = []
+
 
 }
 //提交答案
 const submitAnswer = () => {
   let postAnswer = ''
-  if(answer) {
+  if(answer.value) {
     if(penType.value === '多选') {
       answer.value.sort()
       for(const answerKey of answer.value) {
@@ -120,16 +122,18 @@ const submitAnswer = () => {
       }
   ).then((res) => {
         if(res.code == 200) {
-          ElMessage({
+          canSubmit.value = false
+          ElNotification({
             message: res.msg,
             type: 'success',
           })
         } else {
-          ElMessage({
+          ElNotification({
             message: res.msg,
             type: 'error',
           })
         }
+
 
       }
   )
@@ -141,7 +145,7 @@ const submitScore = (score) => {
       {
         "cid": store.state.competeInfo.cId,
         "answer": score,
-        "score":score,
+        "score": score,
         "roomId": store.state.roomId,
         "penId": penId.value,
         "type": store.state.competeInfo.currentType,
@@ -150,12 +154,12 @@ const submitScore = (score) => {
       }
   ).then((res) => {
         if(res.code == 200) {
-          ElMessage({
+          ElNotification({
             message: res.msg,
             type: 'success',
           })
         } else {
-          ElMessage({
+          ElNotification({
             message: res.msg,
             type: 'error',
           })
@@ -164,17 +168,16 @@ const submitScore = (score) => {
       }
   )
 }
-onMounted(()=>{
-  window.addEventListener('message', e=>{
+onMounted(() => {
+  window.addEventListener('message', e => {
     const data = e.data
-    if(data.event==='sendScore'){
+    if(data.event === 'sendScore') {
       submitScore(data.score)
       //提交分数
     }
 
   })
 })
-
 
 
 defineExpose({timeOutAnswer})
@@ -207,7 +210,7 @@ defineExpose({timeOutAnswer})
   }
 
   .pen-order {
-    width: 80px;
+    width: 100px;
     height: 20px;
     font-size: 21px;
     font-family: Source Han Sans CN;

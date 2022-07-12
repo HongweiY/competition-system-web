@@ -39,9 +39,10 @@
 import {onMounted, reactive, ref, inject} from "vue";
 import storage from '../../utils/storage'
 import store from "../../store";
-const $api = inject('$api')
-const $message = inject('$message')
-const userInfo =storage.getItem('userInfo')
+import api from "../../api";
+import emitter from "../../utils/bus";
+
+const userInfo = storage.getItem('userInfo')
 const rank = ref(0)
 const page_size = 10
 let rankList = ref([])
@@ -72,24 +73,29 @@ const nextPage = () => {
 const getRankList = async() => {
   const params = {page: currentPage.value, page_size: page_size, cid: store.state.competeInfo.cId, uid: userInfo._id}
   try {
-    const {data, page,currentRank} = await $api.rankList(params)
+    const {data, page, currentRank} = await api.rankList(params)
     rankList.value = data
     total.value = page.total
-    rank.value=currentRank
+    rank.value = currentRank
   } catch(e) {
-    $message.error('服务器异常')
     throw e
   }
 }
 
 onMounted(() => {
   getRankList()
+  //查询
+  emitter.on('RankReload', () => {
+        getRankList()
+      }
+  );
 })
 </script>
 
 <style scoped lang="scss">
 .rank {
   height: 100%;
+  width: 100%;
 
   .rank-title {
     display: flex;

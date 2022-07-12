@@ -80,7 +80,6 @@ export default {
         if(matchInfo.userFourId) {
             matchUserInfo[3] = matchInfo.userFourId
         }
-
         state.matchUserInfo = [{
             ...currentUser,
             role: '自己',
@@ -108,43 +107,50 @@ export default {
     },
     finalUserInfos(state, value) {
         const matchInfo = value.message
-        const finalUserInfos = []
         const currentUser = storage.getItem('userInfo')
 
-
-        finalUserInfos[0] = matchInfo[0]
-        finalUserInfos[1] = matchInfo[1]
-        state.matchUserInfo = []
-        for(const user of finalUserInfos) {
-            if(user._id !== currentUser._id) {
-                state.matchUserInfo[0] = {
+        let mine = {}
+        let other = {}
+        let tem=[]
+        for(const user of matchInfo) {
+            if(user.userId === currentUser.userId) {
+                mine = {
                     ...user,
                     rank: user.rank
                 }
-
             } else {
-                state.matchUserInfo[1] = {
+                other = {
                     ...user,
                     rank: user.rank
                 }
             }
 
         }
+        tem.push(mine)
+        tem.push(other)
+        console.log('matchInfo')
+        console.log(matchInfo)
+        console.log('tem')
+        console.log(tem)
+        state.matchUserInfo=tem
     },
     pushPen(state, value) {
-        const penInfo = value.message
         //获取题目
-        state.penInfo = penInfo
+        state.penInfo = value.message
     },
     pushFinalPen(state, value) {
-        const penInfo = value.message
         //获取题目
-        state.penInfo = penInfo
+        state.penInfo = value.message
     },
     pushFinalMessage(state, value) {
-        const pushInfo = value.message
         //获取题目
-        state.pushInfo = pushInfo
+        state.pushInfo = value.message
+    },
+    pushCurrentFinalInfo(state, value) {
+        state.finalRoundInfo = value.message
+    },
+    clearMatchInfo(state,matchInfo){
+        state.matchUserInfo=matchInfo
     },
 
     //开始新的匹配
@@ -170,25 +176,22 @@ export default {
     //推送回答情况
     pushAnswerInfo(state, value) {
         const answerInfos = value.message
-
         const tempMatchUserInfo = state.matchUserInfo
-        const newMatchUserInfo = []
-        for(const user of tempMatchUserInfo) {
+        for(let i = 0; i < tempMatchUserInfo.length; i++) {
             for(const answerInfo of answerInfos) {
-                if(user._id === answerInfo._id) {
-                    newMatchUserInfo.push({
-                        ...user,
-                        useTime: answerInfo.useTime ? answerInfo.useTime : 0,
-                        score: answerInfo.score ? answerInfo.score : 0,
-                        isRight: answerInfo.isRight
-                    })
+                if(tempMatchUserInfo[i]._id === answerInfo._id) {
+                    tempMatchUserInfo[i].useTime = answerInfo.useTime ? answerInfo.useTime : 0
+                    tempMatchUserInfo[i].score = answerInfo.score ? answerInfo.score : 0
+                    tempMatchUserInfo[i].isRight = answerInfo.isRight
                 }
             }
         }
-        state.matchUserInfo = newMatchUserInfo
+
+        state.matchUserInfo = tempMatchUserInfo
         //
-    },
-    //终极排位赛信息
+    }
+    ,
+//终极排位赛信息
     finalCompetition(state, value) {
         state.competeInfo = value.newCompeteInfo
         storage.setItem('competeInfo', value.newCompeteInfo)
@@ -196,7 +199,8 @@ export default {
         state.finalInfo = value.finalInfo
         storage.setItem('finalInfo', value.finalInfo)
 
-    },
+    }
+    ,
 
 
 }

@@ -6,7 +6,7 @@
     <div class="answer-content">
       <div class="answer-left">
         <div class="answer-left-countdown">
-          <countdown/>
+          <countdown @competitionEnd="competitionEnd"/>
         </div>
         <div class="answer-left-rank">
           <rank-list/>
@@ -46,6 +46,13 @@
         :show-close="false"
         :close-on-press-escape="false"
     >
+      <div class="finalInfo" v-if=" finalInfo.show">
+        <p class="finalInfo-userinfo">您的排名：{{ finalInfo.rank }}；参加轮次 {{ finalInfo.userRounds }} </p>
+        <br>
+        <p class="finalInfo-progress">总轮次：4 轮 ，正在进行第 {{ finalInfo.finalRounds }} 轮 - 第 {{
+            finalInfo.penRoundsNumber
+          }} 题</p>
+      </div>
       <div class="matching-page">
         <component :is="competeTypeInfo[currentType]['matchComponent']"></component>
       </div>
@@ -78,6 +85,8 @@ import PenCard from "../../components/pc/PenCard.vue";
 import store from "../../store";
 import {ElMessage} from "element-plus";
 import storage from "../../utils/storage";
+import {useRoute} from "vue-router";
+import api from "../../api";
 
 
 export default {
@@ -104,7 +113,23 @@ export default {
   },
 
   setup() {
-    const $api = inject('$api')
+    const route = useRoute()
+    const competitionEnd = () => {
+      canSubmit.value = false
+      readyStatus.value.msg = '竞赛已经结束'
+      readyStatus.value.status = false
+      matching.value = true
+      dialogVisible.value = true
+    }
+    //终极排位赛进度
+    const finalInfo = ref({
+      finalRounds: 1,
+      penRoundsNumber: 1,
+      rank: 0,
+      userRounds: 1,
+      show:false
+    })
+
     const $storage = inject('$storage')
     const roomId = ref('')
     //竞赛状态
@@ -116,13 +141,14 @@ export default {
     const timeOutAnswer = ref()
     //传递数据
     const competeInfo = ref([])
-    competeInfo.value = $storage.getItem('competeInfo')
-    const userInfo = $storage.getItem('userInfo')
-    const matchUserInfo = ref([userInfo])
-    const currentType = ref(competeInfo.value['currentType'])
+    const userInfo = ref({})
+    const matchUserInfo = ref([])
+    const currentType = ref()
     let timePercentage = ref(0)
 
     let showTime = ref()
+    let canSubmit = ref(true)
+
     //正在匹配中
     const matching = ref(true)
     const dialogVisible = ref(true)
@@ -157,37 +183,77 @@ export default {
             'perTime': 30
           }
     })
-    let perTime = competeTypeInfo[currentType.value]['perTime'];
-    //监听题目是否发生变化
+    let perTime = ref();
+
     watch(() => store.state.penInfo, (val, old) => {
       matching.value = false
       // penInfo.value = val
       dialogVisible.value = false
       //开始倒计时
-      perTime = val.countDown;
+      perTime.value = val.countDown;
       clearInterval(countdownInterval)
       //跟新答题情况
       for(const key in matchUserInfo.value) {
         matchUserInfo.value[key].isRight = null
       }
       countdown()
+      canSubmit.value = true
     })
     //state.roomId
     watch(() => store.state.rounds, (val, old) => {
+      clearInterval(countdownInterval)
+      canSubmit.value = false
       dialogVisible.value = true
       matching.value = true
-
-      startMatch()
+      console.log('开启新模式')
+      if(competeInfo.value.currentType!=='final'){
+        startMatch()
+      }
     })
     watch(() => store.state.pushInfo, (val, old) => {
+      canSubmit.value = false
       dialogVisible.value = true
       matching.value = true
       readyStatus.value.status = false
       readyStatus.value.msg = store.state.pushInfo
     })
+    watch(() => store.state.finalRoundInfo, (val, old) => {
+      canSubmit.value = false
+      dialogVisible.value = true
+      matching.value = true
+      readyStatus.value.status = false
+      finalInfo.value.finalRounds = val.finalRounds
+      finalInfo.value.penRoundsNumber = val.penRoundsNumber  // 当前所在题目
+      finalInfo.value.rank = val.rank
+      finalInfo.value.userRounds = val.userRounds
+      finalInfo.value.show = true
+      readyStatus.value.msg = val.showMessage
+      store.dispatch('clearMatchInfo', {})
+    })
+    //监听匹配信息
+    watch(() => store.state.matchUserInfo, (val, old) => {
+      let isIn = false
+      for(const valElement of store.state.matchUserInfo) {
+        if(valElement.userId === userInfo.value.userId) {
+          isIn = true
+          break
+        }
+      }
+      if(!isIn){
+        dialogVisible.value = true
+        matching.value = true
+        if(competeInfo.value.currentType!=='final'){
+          startMatch()
+        }
+        console.log('进入重复房间，准备重新匹配')
+      }
+    })
+
     //开启新的模式
     watch(() => store.state.competeInfo, (val, old) => {
+      //判断是终极排位赛还是其他
       currentType.value = val['currentType']
+      canSubmit.value = false
       if(val['currentType'] !== old['currentType']) {
         competeInfo.value = val
         dialogVisible.value = true
@@ -207,40 +273,43 @@ export default {
             dialogVisible.value = true
             matching.value = true
           }
-
         } else {
           dialogVisible.value = true
           matching.value = true
-
-          startMatch()
+          if(competeInfo.value.currentType!=='final'){
+            startMatch()
+          }
         }
       }
     })
+
     //开启终极排位赛
     const startFinal = async() => {
-      let params = {cid: competeInfo.value.cId, type: currentType.value, uid: userInfo.userId}
-      $api.startFinal(params).then((res) => {
+      let params = {cid: competeInfo.value.cId, type: currentType.value, uid: userInfo.value.userId}
+      api.startFinal(params).then((res) => {
 
       })
     }
     const countdown = () => {
-      let newTime = perTime
+      let newTime = perTime.value
       countdownInterval = setInterval(() => {
-        if(perTime < 0) {
+        if(perTime.value < 0) {
           clearInterval(countdownInterval)
-          timeOutAnswer.value.timeOutAnswer()
-          return
+          if(canSubmit.value) {
+            timeOutAnswer.value.timeOutAnswer()
+            return
+          }
         }
-        showTime.value = perTime--
-        timePercentage.value = (1 - perTime / competeTypeInfo[currentType.value]['perTime']) * 100
+        showTime.value = perTime.value--
+        timePercentage.value = (1 - perTime.value / competeTypeInfo[currentType.value]['perTime']) * 100
       }, 1000)
     }
     /**
      * 开始配置信息
      */
     const startMatch = async() => {
-      let params = {cid: competeInfo.value.cId, type: currentType.value, uid: userInfo.userId}
-      $api.startMatch(params).then((res) => {
+      let params = {cid: competeInfo.value.cId, type: currentType.value, uid: userInfo.value.userId}
+      api.startMatch(params).then((res) => {
         if(res.roomId !== 'pushPen') {
           roomId.value = res.roomId
           store.commit('startMatch', res.roomId)
@@ -249,34 +318,73 @@ export default {
         readyStatus.value.msg = '匹配当中'
       })
     }
-    const competitionInfo = async() => {
-      const cid = competeInfo.value.cId
-      if(cid) {
-        let params = {cid: competeInfo.value.cId, type: currentType.value, uid: userInfo.userId}
-        $api.competitionInfo(params).then((res) => {
-          store.commit('saveCompeteInfo', res.competition)
-          currentType.value = res.competition.currentType
-          if(res.competition.currentType === 'final') {
-            readyStatus.value.status = false
-            readyStatus.value.msg = '等待题目推送'
-          }
+
+    /**
+     * 处理用户信息
+     * @returns {Promise<void>}
+     */
+    const dealUserInfo = async() => {
+      //判断vuex中是否有用户信息或者房间id
+      //如果有用户信息，执行短线重连
+      //判断跳转信息是否齐全
+      const cid = route.query.cid
+      const token = route.query.token
+      const type = route.query.type
+      //判断来源
+      if(cid && token) {
+        //齐全，第一次进入竞赛
+        const params = {
+          cid,
+          token: token.replaceAll(' ', '+')
+        }
+        api.dealUserInfo(params).then(async res => {
+          store.commit('saveUserInfo', res.userInfo)
+          store.commit('saveCompeteInfo', res.competeInfo)
+          store.commit('saveToken', res.token)
+          // 刷新页面
+          competeInfo.value = $storage.getItem('competeInfo')
+          userInfo.value = $storage.getItem('userInfo')
+          matchUserInfo.value = [res.userInfo]
+          currentType.value = res.competeInfo['currentType']
+          perTime.value = competeTypeInfo[currentType.value]['perTime']
+
         })
       }
 
-
     }
-
+    const competitionInfo = async() => {
+      const cid = competeInfo.value.cId
+      if(cid) {
+        let params = {cid: competeInfo.value.cId, type: currentType.value, uid: userInfo.value.userId}
+        api.competitionInfo(params).then((res) => {
+          store.commit('saveCompeteInfo', res.competition)
+          currentType.value = res.competition.currentType
+          if(res.competition.screenings === 2 && res.competition.currentType === 'final') {
+            //竞赛结束
+            readyStatus.value.msg = '比赛已经结束'
+          } else {
+            if(res.competition.currentType === 'final') {
+              readyStatus.value.status = false
+              readyStatus.value.msg = '正在查询比赛资格'
+              startFinal()
+            }
+          }
+        })
+      }
+    }
     onBeforeMount(() => {
 
     })
 
     onUpdated(() => {
 
-
     })
     onMounted(() => {
+      //查询
       competitionInfo()
-
+    })
+    onBeforeMount(() => {
+      dealUserInfo()
     })
 
 
@@ -293,6 +401,8 @@ export default {
       matchUserInfo,
       timeOutAnswer,
       readyStatus,
+      competitionEnd,
+      finalInfo
     }
 
   }
@@ -384,7 +494,7 @@ export default {
           height: 28px;
           position: absolute;
           left: 50%;
-          margin-left: -67px;
+          margin-left: -76px;
           text-align: center;
         }
 
@@ -437,6 +547,19 @@ export default {
     --el-dialog-padding-primary: 0px;
     margin-top: 14%;
 
+    .finalInfo {
+      width: 800px;
+      position: absolute;
+      font-size: 36px;
+      font-family: YouSheBiaoTiHei;
+      font-weight: bold;
+      color: #FFFFFF;
+      line-height: 45px;
+      text-align: center;
+      top: -90px;
+      left: 50%;
+      margin-left: -400px;
+    }
 
     .matching-page {
       width: 100%;
@@ -449,7 +572,7 @@ export default {
 }
 
 .start-match {
-  width: 258px;
+  width: 660px;
   height: 45px;
   border: 2px solid #FFFFFF;
   border-radius: 20px;
@@ -462,7 +585,7 @@ export default {
   position: absolute;
   top: 480px;
   left: 50%;
-  margin-left: -129px;
+  margin-left: -330px;
   cursor: pointer;
 
 }

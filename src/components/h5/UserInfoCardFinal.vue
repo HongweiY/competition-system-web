@@ -46,7 +46,7 @@ import {ref, watch} from "vue";
 const userInfo = ref({})
 userInfo.value = store.state.userInfo
 const finalRounds = ref(1)
-const matchUserInfo = []
+const matchUserInfo = ref([])
 watch(() => store.state.penInfo, (value, old) => {
   finalRounds.value = value.rounds
   userInfo.value.rank = value.rank

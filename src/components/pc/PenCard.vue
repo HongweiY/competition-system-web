@@ -4,13 +4,14 @@
       <p v-if="!penInfo.area">当前第 {{ userRounds }} 轮</p>
       <p v-else>当前第 {{ userRounds }} 轮，您所在的是【{{ penInfo.area }}】答题区：</p>
     </div>
-    <div class="pen-order">
-      <p>题目{{ penInfo.penRoundsNumber }}/{{ penInfo.allNum }}：请选择正确答案（{{ penInfo.penType }}）</p>
-    </div>
+
     <template v-if="penInfo.src">
       <iframe :src="penInfo.src" class="interactive-container"></iframe>
     </template>
-    <template v-else="penInfo.src">
+    <template v-else>
+      <div class="pen-order">
+        <p>题目{{ penInfo.penRoundsNumber }}/{{ penInfo.allNum }}：请选择正确答案（{{ penInfo.penType }}）</p>
+      </div>
       <div class="pen-info">
         <p>{{ penInfo.stem }}</p>
         <el-checkbox-group v-model="answer" class="pen-options" v-if="penInfo.penType==='多选'">
@@ -25,8 +26,8 @@
         </el-radio-group>
       </div>
       <div class="pen-submit">
-        <p @click="submitAnswer()" class="submitAnswer" >提交本题答案</p>
-<!--        <p class="submitAnswer forbidden" v-else>提交本题答案</p>-->
+        <p @click="submitAnswer()" class="submitAnswer">提交本题答案</p>
+        <!--        <p class="submitAnswer forbidden" v-else>提交本题答案</p>-->
         <p>每题答完均需“点击”此按钮，提交后不可更改，未提交进入下一题的，视为未作答,答对加分，答错扣分，未作答不扣分</p>
       </div>
     </template>
@@ -39,10 +40,12 @@
 
 <script setup>
 import store from "../../store";
-import {ElMessage} from 'element-plus'
+import {ElMessage, ElNotification} from 'element-plus'
+import emitter from "../../utils/bus.js";
 
-import {ref, watch, defineExpose, defineProps} from "vue";
+import {ref, watch, defineExpose, defineProps ,onMounted} from "vue";
 import api from "../../api";
+
 
 const penInfo = ref({})
 const penId = ref({})
@@ -64,9 +67,8 @@ watch(() => store.state.penInfo, (val, old) => {
   penType.value = val.penType
   rounds.value = val.penRoundsNumber
   canSubmit.value = true
-  if(val.rounds != 1) {
-    userRounds.value = val.rounds
-  }
+  userRounds.value = val.rounds
+  answer.value = []
 })
 
 
@@ -76,7 +78,7 @@ const timeOutAnswer = () => {
   //对答案处理
   let postAnswer = ''
   if(penType.value === '多选') {
-    if(answer) {
+    if(answer.value) {
       answer.value.sort()
       for(const answerKey of answer.value) {
         postAnswer = postAnswer ? postAnswer + ',' + answerKey : answerKey
@@ -98,13 +100,13 @@ const timeOutAnswer = () => {
   ).then(res => {
     console.log(res)
   })
-  answer.value = []
+
 
 }
 //提交答案
 const submitAnswer = () => {
   let postAnswer = ''
-  if(answer) {
+  if(answer.value) {
     if(penType.value === '多选') {
       answer.value.sort()
       for(const answerKey of answer.value) {
@@ -114,6 +116,7 @@ const submitAnswer = () => {
       postAnswer = answer.value[0] ? answer.value[0] : ''
     }
   }
+  emitter.emit('RankReload')
 
 
   api.checkAnswer(
@@ -140,8 +143,51 @@ const submitAnswer = () => {
           })
         }
 
+
       }
   )
+
+  //动画题提交分数
+  const submitScore = (score) => {
+
+    api.checkAnswer(
+        {
+          "cid": store.state.competeInfo.cId,
+          "answer": score,
+          "score": score,
+          "roomId": store.state.roomId,
+          "penId": penId.value,
+          "type": store.state.competeInfo.currentType,
+          "useTime": props.useTime,
+          "rounds": rounds.value//当前在哪一题
+        }
+    ).then((res) => {
+          if(res.code == 200) {
+            ElNotification({
+              message: res.msg,
+              type: 'success',
+            })
+          } else {
+            ElNotification({
+              message: res.msg,
+              type: 'error',
+            })
+          }
+
+        }
+    )
+  }
+
+  onMounted(() => {
+    window.addEventListener('message', e => {
+      const data = e.data
+      if(data.event === 'sendScore') {
+        submitScore(data.score)
+        //提交分数
+      }
+
+    })
+  })
 }
 
 defineExpose({timeOutAnswer})
@@ -183,6 +229,8 @@ defineExpose({timeOutAnswer})
   .interactive-container {
     width: 1034px;
     height: 570px;
+    margin-left: 120px;
+    margin-top: 20px;
 
   }
 

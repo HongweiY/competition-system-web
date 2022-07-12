@@ -44,7 +44,7 @@
     >
       <div class="matching-page">
         <div class="matching-page-middle">
-          <p> 信息错误</p>
+          <p> 竞赛参数错误</p>
         </div>
       </div>
 
@@ -313,13 +313,13 @@ export default {
         p {
           color: #FFE640;
           font-size: 47px;
-          width: 188px;
+          width: 288px;
           height: 37px;
           position: absolute;
           left: 50%;
           top: 50%;
           margin-top: -18px;
-          margin-left: -90px;
+          margin-left: -120px;
           font-weight: bold;
           text-align: center;
 

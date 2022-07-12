@@ -3,11 +3,10 @@ module.exports = {
     'postcss-pxtorem': {
       // 根元素字体大小
       rootValue: ({file}) => {
-        let fontSize = 37.5
-        if(file.indexOf('pc') !== -1) {
-          console.log(file)
-          fontSize = 16
-        }
+        let fontSize = 16
+        // if(file.indexOf('pc') !== -1) {
+        //   fontSize = 16
+        // }
         return fontSize
       },
       // 匹配CSS中的属性，* 代表启用所有属性

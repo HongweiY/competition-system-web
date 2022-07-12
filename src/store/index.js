@@ -17,7 +17,8 @@ const state = {
     roomId: '',
     rounds: 1,
     finalInfo: {},
-    pushInfo: {}
+    pushInfo: {},
+    finalRoundInfo:{}
 }
 const actions = {
     matchRoom({commit}, matchInfo) {
@@ -29,8 +30,8 @@ const actions = {
     pushPen({commit}, prnInfo) {
         commit('pushPen', prnInfo)
     },
-    matchMewRoom({commit}, newRoomId) {
-        commit('matchMewRoom', newRoomId)
+    matchMewRoom({commit}, rounds) {
+        commit('matchMewRoom', rounds)
     },
     changeCompeteType({commit}, competenfo) {
         commit('changeCompeteType', competenfo)
@@ -48,6 +49,12 @@ const actions = {
     pushFinalMessage({commit}, pushInfo) {
         commit('pushFinalMessage', pushInfo)
     },
+    pushCurrentFinalInfo({commit}, pushInfo) {
+        commit('pushCurrentFinalInfo', pushInfo)
+    },
+    clearMatchInfo({commit},matchInfo){
+        commit('clearMatchInfo',matchInfo)
+    }
 
 
 }

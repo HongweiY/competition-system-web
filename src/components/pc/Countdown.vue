@@ -10,13 +10,13 @@
 
 import store from "../../store";
 import dayjs from "dayjs"
-import {onMounted, ref, onBeforeUnmount,watch} from "vue";
+import {onMounted, ref, onBeforeUnmount, watch} from "vue";
 
 
 export default {
   name: "Countdown",
 
-  setup() {
+  setup(props,{emit}) {
     const countDownTime = ref('00:00')
 
     let competeInfo = store.state.competeInfo
@@ -30,32 +30,36 @@ export default {
       switch(competeInfo['currentType']) {
         case 'must':
           lastTime = dayjs(competeInfo.startTime).unix() + 20 * 60 - dayjs().unix()
-          currentType='disuse'
+          currentType = 'disuse'
           break;
         case 'disuse':
           lastTime = dayjs(competeInfo.startTime).unix() + 20 * 60 + 20 * 60 - dayjs().unix()
-          currentType='final'
+          currentType = 'final'
           break;
         case 'final':
-          lastTime = dayjs(competeInfo.endTime).unix()  - dayjs().unix()
-          currentType='final'
+          lastTime = dayjs(competeInfo.endTime).unix() - dayjs().unix()
+          currentType = 'final'
           break;
 
       }
-
+      lastTime--
       if(lastTime <= 0) {
         countDownTime.value = '00:00'
         clearTimeout(timer)
         //通知服务器竞赛切换
-        store.state.ws.send(JSON.stringify({
-          event: 'changeCompeteType',
-          message: {
-            cId:competeInfo.cId,
-            userId:store.state.userInfo.userId,
-            currentType
-          }
-        }))
-
+        if(competeInfo.screenings===2 && competeInfo['currentType']==='disuse'){
+          //竞赛结束
+          emit('competitionEnd',"end")
+        }else {
+          store.state.ws.send(JSON.stringify({
+            event: 'changeCompeteType',
+            message: {
+              cId: competeInfo.cId,
+              userId: store.state.userInfo.userId,
+              currentType
+            }
+          }))
+        }
         return false
       }
 
@@ -67,10 +71,10 @@ export default {
       min = min > 9 ? min : '0' + min
       sec = sec > 9 ? sec : '0' + sec
 
-      countDownTime.value = day + ':' + hr + ':' + min + ':' + sec
       timer = setTimeout(function() {
         countDown()
       }, 1000)
+      countDownTime.value = day + ':' + hr + ':' + min + ':' + sec
     }
 
     watch(() => store.state.competeInfo, (val, old) => {
@@ -80,15 +84,17 @@ export default {
     })
 
     onMounted(() => {
-      countDown()
+     countDown()
     })
 
     onBeforeUnmount(() => {
       clearTimeout(timer)
+      timer=null
     })
 
     return {
-      countDownTime
+      countDownTime,
+      emit
     }
   }
 }

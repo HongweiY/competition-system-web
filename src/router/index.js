@@ -22,7 +22,15 @@ const routes = [
         name: 'answer_pc',
         path: '/answer_pc',
         meta: {
-            title: '答题页面',
+            title: '"互联网+保密”全民云端知识竞赛',
+        },
+        component: () => import('../views/pc/AnswerExercise.vue'),
+    },
+    {
+        name: 'competition_pc',
+        path: '/competition_pc',
+        meta: {
+            title: '"互联网+保密”全民云端知识竞赛',
         },
         component: () => import('../views/pc/Answer.vue'),
     },
@@ -30,25 +38,17 @@ const routes = [
         name: 'answer_h5',
         path: '/answer_h5',
         meta: {
-            title: '答题页面',
+            title: ' 竞赛演练',
+        },
+        component: () => import('../views/h5/AnswerExercise.vue'),
+    },
+    {
+        name: 'competition_h5',
+        path: '/competition_h5',
+        meta: {
+            title: '"互联网+保密”全民云端知识竞赛',
         },
         component: () => import('../views/h5/Answer.vue'),
-    },
-    {
-        name: 'answer_must_h5',
-        path: '/answer_must_h5',
-        meta: {
-            title: '必答赛',
-        },
-        component: () => import('../views/h5/Answer_must.vue'),
-    },
-    {
-        name: 'answer_disuse_h5',
-        path: '/answer_disuse_h5',
-        meta: {
-            title: '淘汰赛',
-        },
-        component: () => import('../views/h5/Answer_disuse.vue'),
     },
     {
         name: 'h5_404',
@@ -78,10 +78,8 @@ router.beforeEach((to, from, next) => {
     if(router.hasRoute(to.name)) {
         document.title = to.meta.title
         if(!store.state.ws) {
-
             store.commit('initWebSocket', {})
         }
-
         next()
     } else {
         next('/404')

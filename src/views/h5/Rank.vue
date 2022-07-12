@@ -62,6 +62,7 @@ import {ElMessage} from "element-plus";
 import api from "../../api";
 import {useRoute, useRouter} from 'vue-router'
 
+
 const page_size = 8
 const total = ref()
 const currentPage = ref(1)
@@ -107,16 +108,17 @@ const load = async() => {
   RankList.value = RankList.value.concat(data)
 }
 
-onBeforeMount(() => {
 
+
+onBeforeMount(() => {
 })
 
 onUpdated(() => {
 
 })
 onMounted(() => {
-  //查询
   getRankList()
+
 
 })
 
@@ -239,6 +241,7 @@ onMounted(() => {
     width: 700px;
     background: #FFFFFF;
     border-radius: 18px;
+    user-select: none;
 
     .rank-list-header {
       width: 700px;
@@ -266,7 +269,7 @@ onMounted(() => {
       img:nth-child(3) {
         width: 36px;
         height: 46px;
-        margin-left: 302px;
+        margin-left: 280px;
 
       }
 
@@ -320,7 +323,7 @@ onMounted(() => {
         }
 
         .rank-username {
-          width: 52px;
+          width: 132px;
           height: 24px;
           font-size: 26px;
           font-family: Source Han Sans CN;

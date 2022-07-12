@@ -41,6 +41,7 @@ class WebSocketClient {
         this.send(JSON.stringify({
             event: 'auth',
             userId: store.state.userInfo.userId,
+            cId: store.state.competeInfo.cId,
             message: 'Bearer ' + store.state.token
         }))
     }
